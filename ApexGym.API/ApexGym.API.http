@@ -1,0 +1,6 @@
+@ApexGym.API_HostAddress = http://localhost:5206
+
+GET {{ApexGym.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

@@ -1,0 +1,40 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.12.35527.113 d17.12
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApexGym.Domain", "ApexGym.Domain\ApexGym.Domain.csproj", "{865FBAC4-A191-4098-9E3A-C7DFC1F9EC31}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApexGym.Application", "ApexGym.Application\ApexGym.Application.csproj", "{88612D5F-A392-4961-B7C8-C464BD9139AA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApexGym.Infrastructure", "ApexGym.Infrastructure\ApexGym.Infrastructure.csproj", "{8944FADA-F300-4E57-8BBC-6D110C72A488}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApexGym.API", "ApexGym.API\ApexGym.API.csproj", "{699EFAC7-806A-4FBA-8F48-888BFBC4695C}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{865FBAC4-A191-4098-9E3A-C7DFC1F9EC31}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{865FBAC4-A191-4098-9E3A-C7DFC1F9EC31}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{865FBAC4-A191-4098-9E3A-C7DFC1F9EC31}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{865FBAC4-A191-4098-9E3A-C7DFC1F9EC31}.Release|Any CPU.Build.0 = Release|Any CPU
+		{88612D5F-A392-4961-B7C8-C464BD9139AA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{88612D5F-A392-4961-B7C8-C464BD9139AA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{88612D5F-A392-4961-B7C8-C464BD9139AA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{88612D5F-A392-4961-B7C8-C464BD9139AA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8944FADA-F300-4E57-8BBC-6D110C72A488}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8944FADA-F300-4E57-8BBC-6D110C72A488}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8944FADA-F300-4E57-8BBC-6D110C72A488}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8944FADA-F300-4E57-8BBC-6D110C72A488}.Release|Any CPU.Build.0 = Release|Any CPU
+		{699EFAC7-806A-4FBA-8F48-888BFBC4695C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{699EFAC7-806A-4FBA-8F48-888BFBC4695C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{699EFAC7-806A-4FBA-8F48-888BFBC4695C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{699EFAC7-806A-4FBA-8F48-888BFBC4695C}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
