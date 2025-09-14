@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using ApexGym.Domain.Common;
+using System.Net;
 using System.Text.Json;
 
 namespace ApexGym.API.Middleware
@@ -26,20 +27,35 @@ namespace ApexGym.API.Middleware
             }
             catch (Exception ex)
             {
-                // If an exception is thrown, handle it here
-                _logger.LogError(ex, ex.Message); // Log the error
+                _logger.LogError(ex, ex.Message);
                 context.Response.ContentType = "application/json";
-                context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
 
-                // Create a response based on the environment (Development vs Production)
+                // ===== NEW & SMARTER STATUS CODE LOGIC =====
+                // This checks the type of the exception that was caught.
+                context.Response.StatusCode = ex switch
+                {
+                    // Pattern: [Type to check] => [Value to return if it matches]
+                    NotFoundException => StatusCodes.Status404NotFound, // If it's a NotFoundException, return 404
+                                                                        // We can add more lines here later for other custom exceptions...
+                                                                        // For example:
+                                                                        // BadRequestException => StatusCodes.Status400BadRequest,
+
+                    // The underscore '_' is the default case. If it's any other type of exception, return 500.
+                    _ => StatusCodes.Status500InternalServerError
+                };
+                // ===========================================
+
+                // ... rest of the code (creating the response, converting to JSON) stays the same ...
                 var response = _env.IsDevelopment()
                     ? new ApiException(context.Response.StatusCode, ex.Message, ex.StackTrace?.ToString())
-                    : new ApiException(context.Response.StatusCode, "Internal Server Error");
+                    : new ApiException(context.Response.StatusCode, ex switch
+                    {
+                        NotFoundException => ex.Message,
+                        _ => "An internal server error has occurred."
+                    });
 
-                // Convert the response to JSON
                 var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
                 var json = JsonSerializer.Serialize(response, options);
-
                 await context.Response.WriteAsync(json);
             }
         }

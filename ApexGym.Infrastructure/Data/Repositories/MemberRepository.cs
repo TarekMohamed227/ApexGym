@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using ApexGym.Application.Interfaces.Repositories;
+using ApexGym.Domain.Common;
 using ApexGym.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -22,7 +23,14 @@ namespace ApexGym.Infrastructure.Data.Repositories
         public async Task<Member> GetByIdAsync(int id)
         {
             // Use EF Core to find the member by their primary key (Id)
-            return await _dbContext.Members.FindAsync(id);
+            var member= await _dbContext.Members.FindAsync(id);
+
+            if(member == null)
+            {
+                throw new NotFoundException(nameof(Member), id);
+            }
+            return member;
+
         }
 
         public async Task<List<Member>> GetAllAsync()

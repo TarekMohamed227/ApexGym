@@ -1,4 +1,5 @@
 ﻿using ApexGym.Application.Dtos;
+using ApexGym.Application.Dtos.Validators;
 using ApexGym.Application.Interfaces.Repositories;
 using ApexGym.Domain.Entities;
 using AutoMapper;
@@ -65,7 +66,18 @@ namespace ApexGym.API.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> PutMember(int id, MemberUpdateDto memberUpdateDto)
         {
-            
+            // === NEW VALIDATION CODE ===
+            // Create an instance of the validator
+            var validator = new MemberUpdateDtoValidator();
+            // Perform the validation
+            var validationResult = await validator.ValidateAsync(memberUpdateDto);
+
+            // If validation fails, return a 400 Bad Request with the error messages
+            if (!validationResult.IsValid)
+            {
+                // This returns a 400 status code and a list of errors
+                return BadRequest(validationResult.Errors.Select(e => new { e.PropertyName, e.ErrorMessage }));
+            }
 
             var existingMember = await _memberRepository.GetByIdAsync(id);
             if (existingMember == null)

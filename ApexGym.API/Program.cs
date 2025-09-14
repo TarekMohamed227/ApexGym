@@ -1,8 +1,10 @@
 using ApexGym.API.Middleware;
+using ApexGym.Application.Dtos.Validators;
 using ApexGym.Application.Interfaces.Repositories;
 using ApexGym.Application.Mappings;
 using ApexGym.Infrastructure.Data;
 using ApexGym.Infrastructure.Data.Repositories;
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -26,8 +28,14 @@ builder.Services.AddScoped<IMemberRepository, MemberRepository>();
 // This line scans the entire assembly (ApexGym.Application) for all Profile classes
 // and configures AutoMapper with them.
 builder.Services.AddAutoMapper(typeof(MemberProfile)); // You can use any type from the assembly
+
+// Add FluentValidation services
+builder.Services.AddValidatorsFromAssemblyContaining<MemberUpdateDtoValidator>(); // Scans the assembly for all Validators
+
+
 var app = builder.Build();
 
+// ... other services (AddDbContext, AddScoped, AddAutoMapper) ...
 // Add our custom exception middleware at the top of the pipeline
 app.UseMiddleware<ExceptionMiddleware>();
 
