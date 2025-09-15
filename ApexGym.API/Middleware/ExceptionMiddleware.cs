@@ -27,7 +27,8 @@ namespace ApexGym.API.Middleware
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, ex.Message);
+                // Log the error with context
+                _logger.LogError(ex, "An unhandled exception occurred. Request Path: {RequestPath}", context.Request.Path);
                 context.Response.ContentType = "application/json";
 
                 // ===== NEW & SMARTER STATUS CODE LOGIC =====

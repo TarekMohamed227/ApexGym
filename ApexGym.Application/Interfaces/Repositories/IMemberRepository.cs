@@ -16,4 +16,7 @@ namespace ApexGym.Application.Interfaces.Repositories
         Task DeleteAsync(Member member);
         Task<bool> IsEmailUniqueAsync(string email);
     }
+
+    
+
 }
