@@ -1,12 +1,18 @@
+using System.Text;
 using ApexGym.API.Filters;
 using ApexGym.API.Middleware;
 using ApexGym.Application.Dtos.Validators;
 using ApexGym.Application.Interfaces.Repositories;
 using ApexGym.Application.Mappings;
+using ApexGym.Domain.Entities;
 using ApexGym.Infrastructure.Data;
 using ApexGym.Infrastructure.Data.Repositories;
+using ApexGym.Infrastructure.Services;
 using FluentValidation;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using Serilog.Events;
 
@@ -53,9 +59,55 @@ try
     builder.Services.AddAutoMapper(typeof(MemberProfile));
     builder.Services.AddValidatorsFromAssemblyContaining<MemberUpdateDtoValidator>();
 
+
+    // Add Identity
+    builder.Services.AddIdentity<User, IdentityRole<int>>(options =>
+    {
+        options.Password.RequireDigit = true;
+        options.Password.RequireLowercase = true;
+        options.Password.RequireUppercase = true;
+        options.Password.RequireNonAlphanumeric = true;
+        options.Password.RequiredLength = 8;
+    })
+    .AddEntityFrameworkStores<AppDbContext>()
+    .AddDefaultTokenProviders();
+
+    // Add Authentication with JWT
+    builder.Services.AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:Secret"]!)
+            ),
+            ValidateIssuer = true,
+            ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
+            ValidateAudience = true,
+            ValidAudience = builder.Configuration["JwtSettings:Audience"],
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.Zero
+        };
+    });
+
+    // Register Token Service
+    builder.Services.AddScoped<ITokenService, TokenService>();
+
+
+
     // ===== END OF SERVICE REGISTRATION =====
 
+
+
     var app = builder.Build();
+
+    app.UseAuthentication(); // <-- This must come BEFORE UseAuthorization
+    app.UseAuthorization();
 
     // ===== MIDDLEWARE PIPELINE CONFIGURATION =====
     app.UseMiddleware<ExceptionMiddleware>();

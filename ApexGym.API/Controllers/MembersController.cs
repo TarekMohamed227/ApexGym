@@ -3,6 +3,7 @@ using ApexGym.Application.Dtos.Validators;
 using ApexGym.Application.Interfaces.Repositories;
 using ApexGym.Domain.Entities;
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,6 +11,7 @@ namespace ApexGym.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class MembersController : ControllerBase
     {
         private readonly IMemberRepository _memberRepository;

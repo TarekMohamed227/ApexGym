@@ -1,25 +1,26 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using ApexGym.Domain.Entities;
-using Microsoft.AspNet.Identity.EntityFramework;
+﻿using ApexGym.Domain.Entities;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace ApexGym.Infrastructure.Data;
 
-//public class AppDbContext : IdentityDbContext<User>
-//{
-//    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) // Call base constructor
-//    {
-//    }
+// Ensure it inherits from IdentityDbContext<User, IdentityRole<int>, int>
+public class AppDbContext : IdentityDbContext<User, IdentityRole<int>, int>
+{
+    // The constructor parameter must be DbContextOptions<AppDbContext>, not string
+    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
+    {
+    }
 
-//    public DbSet<Member> Members => Set<Member>();
+    public DbSet<Member> Members => Set<Member>();
 
-//    protected override void OnModelCreating(ModelBuilder builder)
-//    {
-//        base.OnModelCreating(builder); // <-- CRITICAL: This calls Identity's model configuration
-//        // Your other model configurations here...
-//    }
-//}
+    protected override void OnModelCreating(ModelBuilder builder)
+    {
+        // This must be the FIRST line to call the base Identity configuration
+        base.OnModelCreating(builder);
+
+        // Add your own custom model configurations AFTER the base call
+        // builder.Entity<Member>(entity => { ... });
+    }
+}
