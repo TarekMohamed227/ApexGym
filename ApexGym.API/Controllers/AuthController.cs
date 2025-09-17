@@ -23,30 +23,28 @@ namespace ApexGym.API.Controllers
         [HttpPost("register")]
         public async Task<ActionResult> Register(RegisterDto registerDto)
         {
-            try
+            var user = new User { UserName = registerDto.Email, Email = registerDto.Email };
+            var result = await _userManager.CreateAsync(user, registerDto.Password);
+
+            if (!result.Succeeded)
             {
-                // Create new user with email as both UserName and Email
-                var user = new User
-                {
-                    UserName = registerDto.Email,
-                    Email = registerDto.Email
-                };
-
-                // Create user with password (Identity automatically hashes the password)
-                var result = await _userManager.CreateAsync(user, registerDto.Password);
-
-                if (!result.Succeeded)
-                {
-                    // Return validation errors if registration failed
-                    return BadRequest(result.Errors);
-                }
-
-                return Ok(new { message = "Registration successful. Please log in." });
+                return BadRequest(result.Errors);
             }
-            catch (Exception ex)
+
+            // DEFAULT ROLE: Every new user gets "Member" role
+            if(registerDto.Email.ToLower().Contains("Member"))
             {
-                return StatusCode(500, new { message = "An error occurred during registration." });
+                await _userManager.AddToRoleAsync(user, "Member");
+            }   
+            
+
+            // SPECIAL CASE: If email contains "admin", also give "Admin" role
+            if (registerDto.Email.ToLower().Contains("admin"))
+            {
+                await _userManager.AddToRoleAsync(user, "Admin");
             }
+
+            return Ok(new { message = "Registration successful. Please log in." });
         }
 
         [HttpPost("login")]

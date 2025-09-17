@@ -1,70 +1,63 @@
 ﻿using ApexGym.Application.Interfaces.Repositories;
 using ApexGym.Domain.Entities;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
-using System;
-using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
 using System.Security.Claims;
 using System.Text;
-using System.Threading.Tasks;
 
-namespace ApexGym.Infrastructure.Services
+public class TokenService : ITokenService
 {
-   
+    private readonly IConfiguration _config;
+    private readonly SymmetricSecurityKey _key;
+    private readonly UserManager<User> _userManager; // Add UserManager
 
-    public class TokenService : ITokenService
+    // Inject UserManager through constructor
+    public TokenService(IConfiguration config, UserManager<User> userManager)
     {
-        private readonly IConfiguration _config;
-        private readonly SymmetricSecurityKey _key;
+        _config = config;
+        _userManager = userManager;
+        _key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["JwtSettings:Secret"]!));
+    }
 
-        public TokenService(IConfiguration config)
-        {
-            _config = config;
-            // Create the security key once during construction for better performance
-            _key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["JwtSettings:Secret"]!));
-        }
+    public async Task<string> CreateToken(User user) // Made async
+    {
+        // 1. GET USER ROLES FROM DATABASE - This is the correct way
+        var roles = await _userManager.GetRolesAsync(user);
 
-        public string CreateToken(User user)
+        // 2. CREATE CLAIMS - Include actual roles from database
+        var claims = new List<Claim>
         {
-            // 1. CREATE CLAIMS - These become the payload of the JWT
-            // Claims are pieces of information about the user that we "claim" to be true
-            var claims = new List<Claim>
-        {
-            // The user's unique ID. This is the most important claim.
             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            
-            // The user's email. Useful for display purposes.
             new Claim(ClaimTypes.Email, user.Email),
-            
-            // The username. Identity requires this.
             new Claim(ClaimTypes.Name, user.UserName),
-            
-            // You can add custom claims here later:
-            // new Claim("MembershipLevel", "Premium"),
-            // new Claim("GymBranchId", "5")
         };
 
-            // 2. CREATE SIGNING CREDENTIALS - How we will sign the token
-            var creds = new SigningCredentials(_key, SecurityAlgorithms.HmacSha512Signature);
-
-            // 3. DESCRIBE THE TOKEN - All the token's properties
-            var tokenDescriptor = new SecurityTokenDescriptor
-            {
-                Subject = new ClaimsIdentity(claims), // The payload (claims) for the token
-                Expires = DateTime.UtcNow.AddMinutes( // When the token expires
-                    double.Parse(_config["JwtSettings:ExpiryMinutes"]!)
-                ),
-                SigningCredentials = creds, // How to sign it
-                Issuer = _config["JwtSettings:Issuer"], // Who issued it
-                Audience = _config["JwtSettings:Audience"] // Who it's for
-            };
-
-            // 4. CREATE AND WRITE THE TOKEN
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var token = tokenHandler.CreateToken(tokenDescriptor);
-            return tokenHandler.WriteToken(token);
+        // 3. ADD EACH ROLE AS A SEPARATE CLAIM
+        foreach (var role in roles)
+        {
+            claims.Add(new Claim(ClaimTypes.Role, role));
         }
+
+        // 4. CREATE SIGNING CREDENTIALS
+        var creds = new SigningCredentials(_key, SecurityAlgorithms.HmacSha512Signature);
+
+        // 5. DESCRIBE THE TOKEN
+        var tokenDescriptor = new SecurityTokenDescriptor
+        {
+            Subject = new ClaimsIdentity(claims),
+            Expires = DateTime.UtcNow.AddMinutes(
+                double.Parse(_config["JwtSettings:ExpiryMinutes"]!)
+            ),
+            SigningCredentials = creds,
+            Issuer = _config["JwtSettings:Issuer"],
+            Audience = _config["JwtSettings:Audience"]
+        };
+
+        // 6. CREATE AND WRITE THE TOKEN
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var token = tokenHandler.CreateToken(tokenDescriptor);
+        return tokenHandler.WriteToken(token);
     }
 }

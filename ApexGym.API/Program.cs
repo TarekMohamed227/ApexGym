@@ -7,28 +7,29 @@ using ApexGym.Application.Mappings;
 using ApexGym.Domain.Entities;
 using ApexGym.Infrastructure.Data;
 using ApexGym.Infrastructure.Data.Repositories;
-using ApexGym.Infrastructure.Services;
+
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using Serilog;
 using Serilog.Events;
 
 // Create and configure the Serilog logger
 Log.Logger = new LoggerConfiguration()
-    .MinimumLevel.Debug() // Set the minimum level to log
-    .MinimumLevel.Override("Microsoft", LogEventLevel.Information) // Quiet down Microsoft's internal logs
-    .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning) // Only log EF warnings and errors
-    .Enrich.FromLogContext() // Adds context information like ThreadId
+    .MinimumLevel.Debug()
+    .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+    .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning)
+    .Enrich.FromLogContext()
     .WriteTo.Console(
         outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}"
     )
     .WriteTo.File(
-        path: "logs/log-.txt", // Log file path. It will create new files based on the date.
-        rollingInterval: RollingInterval.Day, // Create a new file each day
-        restrictedToMinimumLevel: LogEventLevel.Information, // Only log Info and above to file
+        path: "logs/log-.txt",
+        rollingInterval: RollingInterval.Day,
+        restrictedToMinimumLevel: LogEventLevel.Information,
         outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}"
     )
     .CreateLogger();
@@ -39,9 +40,9 @@ try
 
     var builder = WebApplication.CreateBuilder(args);
 
-    // CLEAR all existing logging providers and ADD Serilog
-    builder.Logging.ClearProviders(); // Remove the default console logger
-    builder.Host.UseSerilog(); // Tell ASP.NET Core to use Serilog for all logging
+    // Clear all existing logging providers and add Serilog
+    builder.Logging.ClearProviders();
+    builder.Host.UseSerilog();
 
     // ===== SERVICE REGISTRATION =====
     builder.Services.AddControllers(options =>
@@ -50,17 +51,43 @@ try
     });
 
     builder.Services.AddEndpointsApiExplorer();
-    builder.Services.AddSwaggerGen();
+    builder.Services.AddSwaggerGen(options =>
+    {
+        options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+        {
+            Description = "JWT Authorization header using the Bearer scheme.",
+            Name = "Authorization",
+            In = ParameterLocation.Header,
+            Type = SecuritySchemeType.Http,
+            Scheme = "Bearer"
+        });
 
+        options.AddSecurityRequirement(new OpenApiSecurityRequirement
+        {
+            {
+                new OpenApiSecurityScheme
+                {
+                    Reference = new OpenApiReference
+                    {
+                        Type = ReferenceType.SecurityScheme,
+                        Id = "Bearer"
+                    }
+                },
+                new string[] {}
+            }
+        });
+    });
+
+    // Database Context
     builder.Services.AddDbContext<AppDbContext>(options =>
         options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+    // Application Services
     builder.Services.AddScoped<IMemberRepository, MemberRepository>();
     builder.Services.AddAutoMapper(typeof(MemberProfile));
     builder.Services.AddValidatorsFromAssemblyContaining<MemberUpdateDtoValidator>();
 
-
-    // Add Identity
+    // Identity Configuration
     builder.Services.AddIdentity<User, IdentityRole<int>>(options =>
     {
         options.Password.RequireDigit = true;
@@ -72,7 +99,7 @@ try
     .AddEntityFrameworkStores<AppDbContext>()
     .AddDefaultTokenProviders();
 
-    // Add Authentication with JWT
+    // JWT Authentication
     builder.Services.AddAuthentication(options =>
     {
         options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -95,21 +122,30 @@ try
         };
     });
 
-    // Register Token Service
+    // Token Service
     builder.Services.AddScoped<ITokenService, TokenService>();
-
-
 
     // ===== END OF SERVICE REGISTRATION =====
 
-
-
     var app = builder.Build();
 
-    app.UseAuthentication(); // <-- This must come BEFORE UseAuthorization
-    app.UseAuthorization();
+    // ===== INITIALIZE ROLES =====
+    using (var scope = app.Services.CreateScope())
+    {
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<int>>>();
 
-    // ===== MIDDLEWARE PIPELINE CONFIGURATION =====
+        // Create roles if they don't exist
+        var roles = new[] { "Admin", "Member" };
+
+        foreach (var role in roles)
+        {
+            if (!await roleManager.RoleExistsAsync(role))
+            {
+                await roleManager.CreateAsync(new IdentityRole<int>(role));
+            }
+        }
+    }
+    // ===== MIDDLEWARE PIPELINE =====
     app.UseMiddleware<ExceptionMiddleware>();
 
     if (app.Environment.IsDevelopment())
@@ -119,7 +155,11 @@ try
     }
 
     app.UseHttpsRedirection();
+
+    // Authentication & Authorization MUST be in this order
+    app.UseAuthentication();
     app.UseAuthorization();
+
     app.MapControllers();
 
     Log.Information("Application configured successfully. Starting now...");
@@ -127,11 +167,9 @@ try
 }
 catch (Exception ex)
 {
-    // This will catch any exceptions that happen during application startup
     Log.Fatal(ex, "Application startup failed!");
 }
 finally
 {
-    // This ensures any buffered log messages are written before the application closes
     Log.CloseAndFlush();
 }

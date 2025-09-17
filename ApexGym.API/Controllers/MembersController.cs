@@ -6,6 +6,7 @@ using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace ApexGym.API.Controllers
 {
@@ -26,11 +27,21 @@ namespace ApexGym.API.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Member>>> GetMembers()
         {
+            // Get user ID from claims
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            // Get user email from claims  
+            var userEmail = User.FindFirst(ClaimTypes.Email)?.Value;
+
+            // Check if user has role
+            var isAdmin = User.IsInRole("Admin");
+
+            // Your business logic
             var members = await _memberRepository.GetAllAsync();
             return Ok(members);
         }
 
-        
+
         [HttpGet("{id}")]
         public async Task<ActionResult<Member>> GetMember(int id)
         {
@@ -106,6 +117,7 @@ namespace ApexGym.API.Controllers
 
         // DELETE: api/members/5
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteMember(int id)
         {
             var member = await _memberRepository.GetByIdAsync(id);
