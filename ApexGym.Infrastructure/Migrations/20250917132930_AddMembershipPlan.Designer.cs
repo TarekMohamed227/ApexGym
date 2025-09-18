@@ -4,6 +4,7 @@ using ApexGym.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ApexGym.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250917132930_AddMembershipPlan")]
+    partial class AddMembershipPlan
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,27 +24,6 @@ namespace ApexGym.Infrastructure.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
-
-            modelBuilder.Entity("ApexGym.Domain.Entities.Attendance", b =>
-                {
-                    b.Property<int>("MemberId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("WorkoutClassId")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("Attended")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime>("RegistrationDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("MemberId", "WorkoutClassId");
-
-                    b.HasIndex("WorkoutClassId");
-
-                    b.ToTable("Attendances");
-                });
 
             modelBuilder.Entity("ApexGym.Domain.Entities.Member", b =>
                 {
@@ -110,7 +92,7 @@ namespace ApexGym.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("MembershipPlans");
+                    b.ToTable("MembershipPlan");
 
                     b.HasData(
                         new
@@ -139,75 +121,6 @@ namespace ApexGym.Infrastructure.Migrations
                             IsActive = true,
                             Name = "VIP",
                             Price = 199.99m
-                        });
-                });
-
-            modelBuilder.Entity("ApexGym.Domain.Entities.Trainer", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Bio")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("FirstName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("LastName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("Specialization")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<int>("YearsOfExperience")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Trainers");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Bio = "Expert in Vinyasa and Hatha yoga.",
-                            FirstName = "John",
-                            IsActive = true,
-                            LastName = "Doe",
-                            Specialization = "Yoga",
-                            YearsOfExperience = 5
-                        },
-                        new
-                        {
-                            Id = 2,
-                            Bio = "National level weightlifting coach.",
-                            FirstName = "Sarah",
-                            IsActive = true,
-                            LastName = "Smith",
-                            Specialization = "Weightlifting",
-                            YearsOfExperience = 8
-                        },
-                        new
-                        {
-                            Id = 3,
-                            Bio = "Passionate about high-intensity interval training.",
-                            FirstName = "Mike",
-                            IsActive = true,
-                            LastName = "Johnson",
-                            Specialization = "HIIT",
-                            YearsOfExperience = 4
                         });
                 });
 
@@ -283,43 +196,6 @@ namespace ApexGym.Infrastructure.Migrations
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
 
                     b.ToTable("AspNetUsers", (string)null);
-                });
-
-            modelBuilder.Entity("ApexGym.Domain.Entities.WorkoutClass", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<DateTime>("EndTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("MaxCapacity")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<DateTime>("StartTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("TrainerId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TrainerId");
-
-                    b.ToTable("WorkoutClasses");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole<int>", b =>
@@ -455,45 +331,15 @@ namespace ApexGym.Infrastructure.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("ApexGym.Domain.Entities.Attendance", b =>
-                {
-                    b.HasOne("ApexGym.Domain.Entities.Member", "Member")
-                        .WithMany()
-                        .HasForeignKey("MemberId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("ApexGym.Domain.Entities.WorkoutClass", "WorkoutClass")
-                        .WithMany("Attendances")
-                        .HasForeignKey("WorkoutClassId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Member");
-
-                    b.Navigation("WorkoutClass");
-                });
-
             modelBuilder.Entity("ApexGym.Domain.Entities.Member", b =>
                 {
                     b.HasOne("ApexGym.Domain.Entities.MembershipPlan", "MembershipPlan")
                         .WithMany("Members")
                         .HasForeignKey("MembershipPlanId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("MembershipPlan");
-                });
-
-            modelBuilder.Entity("ApexGym.Domain.Entities.WorkoutClass", b =>
-                {
-                    b.HasOne("ApexGym.Domain.Entities.Trainer", "Trainer")
-                        .WithMany("WorkoutClasses")
-                        .HasForeignKey("TrainerId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("Trainer");
+                    b.Navigation("MembershipPlan");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<int>", b =>
@@ -550,16 +396,6 @@ namespace ApexGym.Infrastructure.Migrations
             modelBuilder.Entity("ApexGym.Domain.Entities.MembershipPlan", b =>
                 {
                     b.Navigation("Members");
-                });
-
-            modelBuilder.Entity("ApexGym.Domain.Entities.Trainer", b =>
-                {
-                    b.Navigation("WorkoutClasses");
-                });
-
-            modelBuilder.Entity("ApexGym.Domain.Entities.WorkoutClass", b =>
-                {
-                    b.Navigation("Attendances");
                 });
 #pragma warning restore 612, 618
         }

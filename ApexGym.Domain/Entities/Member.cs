@@ -15,5 +15,11 @@ public class Member
     public DateTime DateOfBirth { get; set; }
     public DateTime RegistrationDate { get; set; } = DateTime.UtcNow;
 
-    
+    // Foreign key for MembershipPlan
+    public int MembershipPlanId { get; set; }
+
+    // Navigation properties
+    public virtual MembershipPlan MembershipPlan { get; set; }
+
+
 }
