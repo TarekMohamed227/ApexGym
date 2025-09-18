@@ -2,6 +2,7 @@ using System.Text;
 using ApexGym.API.Filters;
 using ApexGym.API.Middleware;
 using ApexGym.Application.Dtos.Validators;
+using ApexGym.Application.Interfaces;
 using ApexGym.Application.Interfaces.Repositories;
 using ApexGym.Application.Mappings;
 using ApexGym.Domain.Entities;
@@ -84,6 +85,9 @@ try
 
     // Application Services
     builder.Services.AddScoped<IMemberRepository, MemberRepository>();
+    // Add repositories to the container
+    builder.Services.AddScoped<ITrainerRepository, TrainerRepository>();
+    builder.Services.AddScoped<IWorkoutClassRepository, WorkoutClassRepository>();
     builder.Services.AddAutoMapper(typeof(MemberProfile));
     builder.Services.AddValidatorsFromAssemblyContaining<MemberUpdateDtoValidator>();
 

@@ -58,16 +58,15 @@ namespace ApexGym.API.Controllers
 
         // POST: api/members
         [HttpPost]
-        public async Task<ActionResult<Member>> PostMember(Member member)
+        public async Task<ActionResult<Member>> PostMember(MemberCreateDto memberCreateDto)
         {
             // Check if the email is already taken (Business Rule)
-            if (!await _memberRepository.IsEmailUniqueAsync(member.Email))
+            if (!await _memberRepository.IsEmailUniqueAsync(memberCreateDto.Email))
             {
                 return BadRequest("Email is already in use.");
             }
 
-            // The RegistrationDate should be set to UTC Now, not provided by the user.
-            member.RegistrationDate = DateTime.UtcNow;
+            var member = _mapper.Map<Member>(memberCreateDto);
 
             var createdMember = await _memberRepository.AddAsync(member);
 
