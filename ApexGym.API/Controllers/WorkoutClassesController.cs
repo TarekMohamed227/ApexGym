@@ -24,10 +24,11 @@ namespace ApexGym.API.Controllers
 
         // GET: api/workoutclasses
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<WorkoutClass>>> GetWorkoutClasses()
+        public async Task<ActionResult<IEnumerable<WorkoutClassDto>>> GetWorkoutClasses()
         {
             var classes = await _workoutClassRepository.GetAllAsync();
-            return Ok(classes);
+            var target = _mapper.Map<List<WorkoutClassDto>>(classes);
+            return Ok(target);
         }
 
         // GET: api/workoutclasses/5

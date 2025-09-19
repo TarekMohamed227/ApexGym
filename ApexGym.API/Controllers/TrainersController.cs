@@ -42,7 +42,7 @@ namespace ApexGym.API.Controllers
 
         // GET: api/trainers/5/details  <-- Different route
         [HttpGet("{id}/details")] // This creates api/trainers/5/details
-        public async Task<ActionResult<Trainer>> GetTrainerWithDetails(int id) // Renamed to avoid confusion
+        public async Task<ActionResult<GetTrainerDto>> GetTrainerWithDetails(int id) // Renamed to avoid confusion
         {
             var trainer = await _trainerRepository.GetTrainerWithDetailsAsync(id);
             var target= _mapper.Map<GetTrainerDto>(trainer);
