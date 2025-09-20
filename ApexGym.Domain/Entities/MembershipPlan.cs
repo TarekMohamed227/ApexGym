@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ApexGym.Domain.Common;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -7,9 +8,9 @@ using System.Threading.Tasks;
 
 namespace ApexGym.Domain.Entities
 {
-    public class MembershipPlan
+    public class MembershipPlan: BaseEntity
     {
-        public int Id { get; set; }
+        
 
         [Required]
         [MaxLength(100)]

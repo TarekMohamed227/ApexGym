@@ -1,10 +1,9 @@
 ﻿using ApexGym.Application.Dtos;
 using ApexGym.Application.Dtos.Validators;
-using ApexGym.Application.Interfaces.Repositories;
+using ApexGym.Application.Interfaces;
 using ApexGym.Domain.Entities;
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
@@ -15,119 +14,124 @@ namespace ApexGym.API.Controllers
     [Authorize]
     public class MembersController : ControllerBase
     {
-        private readonly IMemberRepository _memberRepository;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
-        public MembersController(IMemberRepository memberRepository, IMapper mapper)
+
+        public MembersController(IUnitOfWork unitOfWork, IMapper mapper)
         {
-            _memberRepository = memberRepository;
+            _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
 
-        
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Member>>> GetMembers()
+        public async Task<ActionResult<IEnumerable<MemberDto>>> GetMembers()
         {
-            // Get user ID from claims
+            // Get user info from claims for business logic
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-            // Get user email from claims  
             var userEmail = User.FindFirst(ClaimTypes.Email)?.Value;
-
-            // Check if user has role
             var isAdmin = User.IsInRole("Admin");
 
-            // Your business logic
-            var members = await _memberRepository.GetAllAsync();
-            return Ok(members);
+            // Use Unit of Work to access Member repository
+            var members = await _unitOfWork.Members.GetAllAsync();
+            var memberDtos = _mapper.Map<List<MemberDto>>(members);
+            return Ok(memberDtos);
         }
 
-
         [HttpGet("{id}")]
-        public async Task<ActionResult<Member>> GetMember(int id)
+        public async Task<ActionResult<MemberDto>> GetMember(int id)
         {
-            var member = await _memberRepository.GetByIdAsync(id);
-
+            var member = await _unitOfWork.Members.GetByIdAsync(id);
             if (member == null)
             {
                 return NotFound();
             }
 
-            return Ok(member);
+            var memberDto = _mapper.Map<MemberDto>(member);
+            return Ok(memberDto);
         }
 
-
-        // POST: api/members
         [HttpPost]
-        public async Task<ActionResult<Member>> PostMember(MemberCreateDto memberCreateDto)
+        public async Task<ActionResult<MemberDto>> PostMember(MemberCreateDto memberCreateDto)
         {
-            // Check if the email is already taken (Business Rule)
-            if (!await _memberRepository.IsEmailUniqueAsync(memberCreateDto.Email))
+            // Use the specific repository for custom methods - NO CASTING NEEDED!
+            if (!await _unitOfWork.MemberRepository.IsEmailUniqueAsync(memberCreateDto.Email))
             {
                 return BadRequest("Email is already in use.");
             }
 
             var member = _mapper.Map<Member>(memberCreateDto);
+            var createdMember = await _unitOfWork.Members.AddAsync(member);
 
-            var createdMember = await _memberRepository.AddAsync(member);
+            // SAVE THE CHANGES
+            var result = await _unitOfWork.CompleteAsync();
+            if (result == 0)
+            {
+                return BadRequest("Failed to create member.");
+            }
 
-            // Returns a 201 Created response, with a Location header pointing to the new resource
-            return CreatedAtAction(nameof(GetMember), new { id = createdMember.Id }, createdMember);
+            var createdMemberDto = _mapper.Map<MemberDto>(createdMember);
+            return CreatedAtAction(nameof(GetMember), new { id = createdMemberDto.Id }, createdMemberDto);
         }
 
-       
         [HttpPut("{id}")]
         public async Task<IActionResult> PutMember(int id, MemberUpdateDto memberUpdateDto)
         {
-            // === NEW VALIDATION CODE ===
-            // Create an instance of the validator
+            // Validation with FluentValidation
             var validator = new MemberUpdateDtoValidator();
-            // Perform the validation
             var validationResult = await validator.ValidateAsync(memberUpdateDto);
 
-            // If validation fails, return a 400 Bad Request with the error messages
             if (!validationResult.IsValid)
             {
-                // This returns a 400 status code and a list of errors
                 return BadRequest(validationResult.Errors.Select(e => new { e.PropertyName, e.ErrorMessage }));
             }
 
-            var existingMember = await _memberRepository.GetByIdAsync(id);
+            var existingMember = await _unitOfWork.Members.GetByIdAsync(id);
             if (existingMember == null)
             {
                 return NotFound();
             }
 
-            // Check email uniqueness only if a new email is provided AND it's different from the old one
+            // Use the specific repository for custom methods - NO CASTING NEEDED!
             if (memberUpdateDto.Email != null &&
                 memberUpdateDto.Email != existingMember.Email &&
-                !await _memberRepository.IsEmailUniqueAsync(memberUpdateDto.Email))
+                !await _unitOfWork.MemberRepository.IsEmailUniqueAsync(memberUpdateDto.Email))
             {
                 return BadRequest("Email is already in use.");
             }
 
-            // Use AutoMapper to update the tracked entity from the DTO
             _mapper.Map(memberUpdateDto, existingMember);
+            await _unitOfWork.Members.UpdateAsync(existingMember);
 
-            await _memberRepository.UpdateAsync(existingMember);
+            // SAVE THE CHANGES
+            var result = await _unitOfWork.CompleteAsync();
+            if (result == 0)
+            {
+                return BadRequest("Failed to update member.");
+            }
 
             return NoContent();
         }
 
-
-        // DELETE: api/members/5
         [HttpDelete("{id}")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteMember(int id)
         {
-            var member = await _memberRepository.GetByIdAsync(id);
+            var member = await _unitOfWork.Members.GetByIdAsync(id);
             if (member == null)
             {
                 return NotFound();
             }
 
-            await _memberRepository.DeleteAsync(member);
+            await _unitOfWork.Members.DeleteAsync(member);
 
-            return NoContent(); // Standard response for a successful DELETE request
+            // SAVE THE CHANGES
+            var result = await _unitOfWork.CompleteAsync();
+            if (result == 0)
+            {
+                return BadRequest("Failed to delete member.");
+            }
+
+            return NoContent();
         }
     }
 }

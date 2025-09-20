@@ -1,7 +1,7 @@
 ﻿using ApexGym.Application.Dtos;
+using ApexGym.Application.Interfaces;
 using ApexGym.Application.Interfaces.Repositories;
 using ApexGym.Domain.Entities;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,12 +12,18 @@ namespace ApexGym.API.Controllers
     public class AuthController : ControllerBase
     {
         private readonly UserManager<User> _userManager;
+        private readonly IGenericRepository<Member> _memberRepository; // Use generic repository
         private readonly ITokenService _tokenService;
 
-        public AuthController(UserManager<User> userManager, ITokenService tokenService)
+        // Updated constructor: Use IGenericRepository<Member> instead of IMemberRepository
+        public AuthController(
+            UserManager<User> userManager,
+            ITokenService tokenService,
+            IGenericRepository<Member> memberRepository) // Changed parameter type
         {
             _userManager = userManager;
             _tokenService = tokenService;
+            _memberRepository = memberRepository;
         }
 
         [HttpPost("register")]
@@ -32,11 +38,10 @@ namespace ApexGym.API.Controllers
             }
 
             // DEFAULT ROLE: Every new user gets "Member" role
-            if(registerDto.Email.ToLower().Contains("Member"))
+            if (registerDto.Email.ToLower().Contains("member"))
             {
                 await _userManager.AddToRoleAsync(user, "Member");
-            }   
-            
+            }
 
             // SPECIAL CASE: If email contains "admin", also give "Admin" role
             if (registerDto.Email.ToLower().Contains("admin"))
@@ -62,7 +67,7 @@ namespace ApexGym.API.Controllers
                 }
 
                 // Generate JWT token
-                var token = _tokenService.CreateToken(user);
+                var token = await _tokenService.CreateToken(user); // Make sure this is async!
 
                 return Ok(new
                 {

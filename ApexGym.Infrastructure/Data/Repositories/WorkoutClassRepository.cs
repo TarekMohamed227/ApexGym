@@ -9,50 +9,49 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ApexGym.Infrastructure.Data.Repositories
 {
-    public class WorkoutClassRepository : IWorkoutClassRepository
+    public class WorkoutClassRepository : GenericRepository<WorkoutClass>, IWorkoutClassRepository
+{
+    public WorkoutClassRepository(AppDbContext context) : base(context)
     {
-        private readonly AppDbContext _dbContext;
+    }
 
-        public WorkoutClassRepository(AppDbContext dbContext)
-        {
-            _dbContext = dbContext;
-        }
+   
 
         public async Task<WorkoutClass> GetByIdAsync(int id)
         {
-            return await _dbContext.WorkoutClasses.FindAsync(id);
+            return await _context.WorkoutClasses.FindAsync(id);
         }
 
         public async Task<List<WorkoutClass>> GetAllAsync()
         {
-            return await _dbContext.WorkoutClasses.ToListAsync();
+            return await _context.WorkoutClasses.Include(w=>w.Trainer).ToListAsync();
         }
 
         // Special method to get class with trainer details included
         public async Task<WorkoutClass> GetByIdWithDetailsAsync(int id)
         {
-            return await _dbContext.WorkoutClasses
+            return await _context.WorkoutClasses
                 .Include(wc => wc.Trainer) // Include trainer details
                 .FirstOrDefaultAsync(wc => wc.Id == id);
         }
 
         public async Task<WorkoutClass> AddAsync(WorkoutClass workoutClass)
         {
-            _dbContext.WorkoutClasses.Add(workoutClass);
-            await _dbContext.SaveChangesAsync();
+            _context.WorkoutClasses.Add(workoutClass);
+            await _context.SaveChangesAsync();
             return workoutClass;
         }
         
         public async Task UpdateAsync(WorkoutClass workoutClass)
         {
-            _dbContext.Entry(workoutClass).State = EntityState.Modified;
-            await _dbContext.SaveChangesAsync();
+            _context.Entry(workoutClass).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
         }
 
         public async Task DeleteAsync(WorkoutClass workoutClass)
         {
-            _dbContext.WorkoutClasses.Remove(workoutClass);
-            await _dbContext.SaveChangesAsync();
+            _context.WorkoutClasses.Remove(workoutClass);
+            await _context.SaveChangesAsync();
         }
     }
 }

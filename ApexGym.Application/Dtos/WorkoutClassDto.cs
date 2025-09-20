@@ -14,6 +14,8 @@ namespace ApexGym.Application.Dtos
         public DateTime StartTime { get; set; }
         public DateTime EndTime { get; set; }
         public int MaxCapacity { get; set; }
+
+        public GetTrainerDto? Trainer { get; set; }
         // DON'T include Trainer here to avoid circular reference
     }
 }

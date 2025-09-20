@@ -1,6 +1,5 @@
 ﻿using ApexGym.Application.Dtos;
 using ApexGym.Application.Interfaces;
-using ApexGym.Application.Interfaces.Repositories;
 using ApexGym.Domain.Entities;
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
@@ -13,68 +12,84 @@ namespace ApexGym.API.Controllers
     [Authorize]
     public class WorkoutClassesController : ControllerBase
     {
-        private readonly IWorkoutClassRepository _workoutClassRepository;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 
-        public WorkoutClassesController(IWorkoutClassRepository workoutClassRepository, IMapper mapper)
+        // SIMPLIFIED: Only 2 dependencies!
+        public WorkoutClassesController(IUnitOfWork unitOfWork, IMapper mapper)
         {
-            _workoutClassRepository = workoutClassRepository;
+            _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
 
-        // GET: api/workoutclasses
         [HttpGet]
         public async Task<ActionResult<IEnumerable<WorkoutClassDto>>> GetWorkoutClasses()
         {
-            var classes = await _workoutClassRepository.GetAllAsync();
+            var classes = await _unitOfWork.WorkoutClasses.GetAllAsync();
             var target = _mapper.Map<List<WorkoutClassDto>>(classes);
             return Ok(target);
         }
 
-        // GET: api/workoutclasses/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<WorkoutClass>> GetWorkoutClass(int id)
+        public async Task<ActionResult<WorkoutClassDto>> GetWorkoutClass(int id)
         {
-            // Use the special method to get class with trainer details
-            var workoutClass = await _workoutClassRepository.GetByIdWithDetailsAsync(id);
-
+            var workoutClass = await _unitOfWork.WorkoutClasses.GetByIdAsync(id);
             if (workoutClass == null)
             {
                 return NotFound();
             }
 
-            return Ok(workoutClass);
+            var target = _mapper.Map<WorkoutClassDto>(workoutClass);
+            return Ok(target);
         }
 
-        // POST: api/workoutclasses
+        [HttpGet("{id}/details")]
+        public async Task<ActionResult<WorkoutClassDto>> GetWorkoutClassWithDetails(int id)
+        {
+            // Use SPECIFIC repository for custom method with includes
+            var workoutClass = await _unitOfWork.WorkoutClassRepository.GetByIdWithDetailsAsync(id);
+            if (workoutClass == null)
+            {
+                return NotFound();
+            }
+
+            var target = _mapper.Map<WorkoutClassDto>(workoutClass);
+            return Ok(target);
+        }
+
         [HttpPost]
         [Authorize(Roles = "Admin")]
-        public async Task<ActionResult<WorkoutClass>> PostWorkoutClass(WorkoutClassCreateDto workoutClassCreateDto)
+        public async Task<ActionResult<WorkoutClassDto>> PostWorkoutClass(WorkoutClassCreateDto workoutClassCreateDto)
         {
-            // Validate that end time is after start time
             if (workoutClassCreateDto.EndTime <= workoutClassCreateDto.StartTime)
             {
                 return BadRequest("End time must be after start time.");
             }
 
             var workoutClass = _mapper.Map<WorkoutClass>(workoutClassCreateDto);
-            var createdClass = await _workoutClassRepository.AddAsync(workoutClass);
+            var createdClass = await _unitOfWork.WorkoutClasses.AddAsync(workoutClass);
 
-            return CreatedAtAction(nameof(GetWorkoutClass), new { id = createdClass.Id }, createdClass);
+            // SAVE THE CHANGES
+            var result = await _unitOfWork.CompleteAsync();
+            if (result == 0)
+            {
+                return BadRequest("Failed to create workout class.");
+            }
+
+            var createdClassDto = _mapper.Map<WorkoutClassDto>(createdClass);
+            return CreatedAtAction(nameof(GetWorkoutClass), new { id = createdClassDto.Id }, createdClassDto);
         }
 
-        // PUT: api/workoutclasses/5
         [HttpPut("{id}")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> PutWorkoutClass(int id, WorkoutClassUpdateDto workoutClassUpdateDto)
         {
-            var existingClass = await _workoutClassRepository.GetByIdAsync(id);
+            var existingClass = await _unitOfWork.WorkoutClasses.GetByIdAsync(id);
             if (existingClass == null)
             {
                 return NotFound();
             }
 
-            // Validate that end time is after start time if both are provided
             if (workoutClassUpdateDto.EndTime.HasValue && workoutClassUpdateDto.StartTime.HasValue &&
                 workoutClassUpdateDto.EndTime <= workoutClassUpdateDto.StartTime)
             {
@@ -82,23 +97,36 @@ namespace ApexGym.API.Controllers
             }
 
             _mapper.Map(workoutClassUpdateDto, existingClass);
-            await _workoutClassRepository.UpdateAsync(existingClass);
+            await _unitOfWork.WorkoutClasses.UpdateAsync(existingClass);
+
+            // SAVE THE CHANGES
+            var result = await _unitOfWork.CompleteAsync();
+            if (result == 0)
+            {
+                return BadRequest("Failed to update workout class.");
+            }
 
             return NoContent();
         }
 
-        // DELETE: api/workoutclasses/5
         [HttpDelete("{id}")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteWorkoutClass(int id)
         {
-            var workoutClass = await _workoutClassRepository.GetByIdAsync(id);
+            var workoutClass = await _unitOfWork.WorkoutClasses.GetByIdAsync(id);
             if (workoutClass == null)
             {
                 return NotFound();
             }
 
-            await _workoutClassRepository.DeleteAsync(workoutClass);
+            await _unitOfWork.WorkoutClasses.DeleteAsync(workoutClass);
+
+            // SAVE THE CHANGES
+            var result = await _unitOfWork.CompleteAsync();
+            if (result == 0)
+            {
+                return BadRequest("Failed to delete workout class.");
+            }
 
             return NoContent();
         }

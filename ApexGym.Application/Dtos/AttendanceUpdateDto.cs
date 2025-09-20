@@ -6,7 +6,8 @@ using System.Threading.Tasks;
 
 namespace ApexGym.Application.Dtos
 {
-    internal class AttendanceUpdateDto
+    public class AttendanceUpdateDto
     {
+        public bool Attended { get; set; } // Only allow updating attendance status
     }
 }

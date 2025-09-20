@@ -21,6 +21,6 @@ namespace ApexGym.Application.Dtos
         public int YearsOfExperience { get; set; }
         public string? Bio { get; set; }
 
-        public virtual ICollection<WorkoutClassDto> WorkoutClasses { get; set; } = new List<WorkoutClassDto>();
+        //public virtual ICollection<WorkoutClassDto> WorkoutClasses { get; set; } = new List<WorkoutClassDto>();
     }
 }

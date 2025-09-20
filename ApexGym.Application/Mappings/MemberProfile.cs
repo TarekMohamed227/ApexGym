@@ -36,12 +36,22 @@ namespace ApexGym.Application.Mappings
 
             // Inside MemberProfile.cs, add these new mappings to the constructor
             CreateMap<TrainerCreateDto, Trainer>();
-            CreateMap<TrainerUpdateDto, Trainer>()
+            CreateMap<TrainerUpdateDto, Trainer>();
+            CreateMap<Trainer, GetTrainerDto>()
                 .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
 
             CreateMap<WorkoutClassCreateDto, WorkoutClass>();
             CreateMap<WorkoutClassUpdateDto, WorkoutClass>()
                 .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
+
+
+            // Inside the MemberProfile constructor
+            CreateMap<AttendanceCreateDto, Attendance>(); 
+            CreateMap<AttendanceUpdateDto, Attendance>();
+            CreateMap<AttendanceDto, Attendance>();
+            CreateMap<Attendance, AttendanceDto>();
+            CreateMap<Member, MemberDto>();
+            CreateMap<WorkoutClass, WorkoutClassDto>();
         }
     }
 }

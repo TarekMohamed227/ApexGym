@@ -1,9 +1,8 @@
 ﻿using ApexGym.Application.Dtos;
-using ApexGym.Application.Interfaces.Repositories;
+using ApexGym.Application.Interfaces;
 using ApexGym.Domain.Entities;
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ApexGym.API.Controllers
@@ -13,103 +12,111 @@ namespace ApexGym.API.Controllers
     [Authorize]
     public class TrainersController : ControllerBase
     {
-        private readonly ITrainerRepository _trainerRepository;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 
-        public TrainersController(ITrainerRepository trainerRepository, IMapper mapper)
+        // SIMPLIFIED: Only 2 dependencies!
+        public TrainersController(IUnitOfWork unitOfWork, IMapper mapper)
         {
-            _trainerRepository = trainerRepository;
+            _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Trainer>>> GetTrainers()
+        public async Task<ActionResult<IEnumerable<Trainer>>> GetTrainers() // Changed to return DTO
         {
-            var trainers = await _trainerRepository.GetAllAsync();
-            return Ok(trainers);
+            var trainers = await _unitOfWork.Trainers.GetAllAsync();
+            var trainerDtos = _mapper.Map<List<Trainer>>(trainers); // Map to DTO
+            return Ok(trainerDtos);
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<Trainer>> GetTrainer(int id)
+        public async Task<ActionResult<Trainer>> GetTrainer(int id) // Changed to return DTO
         {
-            var trainer = await _trainerRepository.GetByIdAsync(id);
+            var trainer = await _unitOfWork.Trainers.GetByIdAsync(id);
             if (trainer == null)
             {
                 return NotFound();
             }
-            return Ok(trainer);
+
+            var trainerDto = _mapper.Map<Trainer>(trainer); // Map to DTO
+            return Ok(trainerDto);
         }
 
-        // GET: api/trainers/5/details  <-- Different route
-        [HttpGet("{id}/details")] // This creates api/trainers/5/details
-        public async Task<ActionResult<GetTrainerDto>> GetTrainerWithDetails(int id) // Renamed to avoid confusion
+        [HttpGet("{id}/details")]
+        public async Task<ActionResult<GetTrainerDto>> GetTrainerWithDetails(int id)
         {
-            var trainer = await _trainerRepository.GetTrainerWithDetailsAsync(id);
-            var target= _mapper.Map<GetTrainerDto>(trainer);
-            if (target == null)
+            // Use SPECIFIC repository for custom method with includes
+            var trainer = await _unitOfWork.TrainerRepository.GetTrainerWithDetailsAsync(id);
+            if (trainer == null)
             {
                 return NotFound();
             }
-            return Ok(target);
+
+            var trainerDto = _mapper.Map<GetTrainerDto>(trainer);
+            return Ok(trainerDto);
         }
-        // POST: api/trainers
-        [HttpPost] // [16] Maps HTTP POST requests to this method
-        [Authorize(Roles = "Admin")] // [17] EXTRA PROTECTION: Only users with "Admin" role can access this
-        public async Task<ActionResult<Trainer>> PostTrainer(TrainerCreateDto trainerCreateDto)
+
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        public async Task<ActionResult<Trainer>> PostTrainer(TrainerCreateDto trainerCreateDto) // Changed to return DTO
         {
-            // [18] BUSINESS LOGIC: Use AutoMapper to convert the DTO to a Trainer entity
-            // This automatically copies FirstName, LastName, etc. from the DTO to the new Trainer object
             var trainer = _mapper.Map<Trainer>(trainerCreateDto);
+            var createdTrainer = await _unitOfWork.Trainers.AddAsync(trainer);
 
-            // [19] DATA ACCESS: Add the new trainer to the database
-            var createdTrainer = await _trainerRepository.AddAsync(trainer);
+            // SAVE THE CHANGES
+            var result = await _unitOfWork.CompleteAsync();
+            if (result == 0)
+            {
+                return BadRequest("Failed to create trainer.");
+            }
 
-            // [20] RETURN: HTTP 201 Created status with:
-            // - A Location header pointing to the new resource (https://localhost:7164/api/trainers/10)
-            // - The complete created trainer object in the response body
-            return CreatedAtAction(nameof(GetTrainer), new { id = createdTrainer.Id }, createdTrainer);
+            var trainerDto = _mapper.Map<Trainer>(createdTrainer); // Map to DTO
+            return CreatedAtAction(nameof(GetTrainer), new { id = trainerDto.Id }, trainerDto);
         }
 
-
-        // PUT: api/trainers/5
         [HttpPut("{id}")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> PutTrainer(int id, TrainerUpdateDto trainerUpdateDto)
         {
-            // [21] VALIDATION: First, check if the trainer we're trying to update exists
-            var existingTrainer = await _trainerRepository.GetByIdAsync(id);
+            var existingTrainer = await _unitOfWork.Trainers.GetByIdAsync(id);
             if (existingTrainer == null)
             {
                 return NotFound();
             }
 
-            // [22] BUSINESS LOGIC: Use AutoMapper to apply updates from the DTO to the existing entity
-            // This only updates properties that are provided (not null) in the DTO
             _mapper.Map(trainerUpdateDto, existingTrainer);
+            await _unitOfWork.Trainers.UpdateAsync(existingTrainer);
 
-            // [23] DATA ACCESS: Save the updated entity back to the database
-            await _trainerRepository.UpdateAsync(existingTrainer);
+            // SAVE THE CHANGES
+            var result = await _unitOfWork.CompleteAsync();
+            if (result == 0)
+            {
+                return BadRequest("Failed to update trainer.");
+            }
 
-            // [24] RETURN: HTTP 204 No Content (standard response for successful PUT requests)
             return NoContent();
         }
 
-        // DELETE: api/trainers/5
         [HttpDelete("{id}")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteTrainer(int id)
         {
-            // [25] VALIDATION: Check if the trainer exists
-            var trainer = await _trainerRepository.GetByIdAsync(id);
+            var trainer = await _unitOfWork.Trainers.GetByIdAsync(id);
             if (trainer == null)
             {
                 return NotFound();
             }
 
-            // [26] DATA ACCESS: Delete the trainer from the database
-            await _trainerRepository.DeleteAsync(trainer);
+            await _unitOfWork.Trainers.DeleteAsync(trainer);
 
-            // [27] RETURN: HTTP 204 No Content (standard response for successful DELETE requests)
+            // SAVE THE CHANGES
+            var result = await _unitOfWork.CompleteAsync();
+            if (result == 0)
+            {
+                return BadRequest("Failed to delete trainer.");
+            }
+
             return NoContent();
         }
     }

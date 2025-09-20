@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ApexGym.Domain.Common;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -7,9 +8,9 @@ using System.Threading.Tasks;
 
 namespace ApexGym.Domain.Entities
 {
-    public class WorkoutClass
+    public class WorkoutClass: BaseEntity
     {
-        public int Id { get; set; }
+      
 
         [Required, MaxLength(100)]
         public string Name { get; set; } = string.Empty; // e.g., "Morning Yoga"

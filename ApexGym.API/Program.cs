@@ -84,13 +84,17 @@ try
         options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
     // Application Services
+    // Add UnitOfWork (ONE line instead of multiple repository registrations)
+    builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
     builder.Services.AddScoped<IMemberRepository, MemberRepository>();
     // Add repositories to the container
     builder.Services.AddScoped<ITrainerRepository, TrainerRepository>();
     builder.Services.AddScoped<IWorkoutClassRepository, WorkoutClassRepository>();
+    builder.Services.AddScoped<IAttendanceRepository, AttendanceRepository>();
     builder.Services.AddAutoMapper(typeof(MemberProfile));
     builder.Services.AddValidatorsFromAssemblyContaining<MemberUpdateDtoValidator>();
-
+    // Add this after your specific repository registrations
+    builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
     // Identity Configuration
     builder.Services.AddIdentity<User, IdentityRole<int>>(options =>
     {

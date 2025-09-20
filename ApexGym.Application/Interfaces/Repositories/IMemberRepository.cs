@@ -7,16 +7,13 @@ using ApexGym.Domain.Entities;
 
 namespace ApexGym.Application.Interfaces.Repositories
 {
-    public interface IMemberRepository
+    public interface IMemberRepository : IGenericRepository<Member>
     {
-        Task<Member> GetByIdAsync(int id);
-        Task<List<Member>> GetAllAsync();
-        Task<Member> AddAsync(Member member);
-        Task UpdateAsync(Member member);
-        Task DeleteAsync(Member member);
+        // Only include SPECIAL methods, not basic CRUD
         Task<bool> IsEmailUniqueAsync(string email);
+
     }
 
-    
+
 
 }

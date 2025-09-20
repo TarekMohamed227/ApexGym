@@ -10,16 +10,19 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ApexGym.Infrastructure.Data.Repositories
 {
-    public class MemberRepository : IMemberRepository // Implement the interface
+    public class MemberRepository : GenericRepository<Member>, IMemberRepository
     {
         private readonly AppDbContext _dbContext;
 
         // Constructor: Dependency Injection provides the AppDbContext
-        public MemberRepository(AppDbContext dbContext)
+        public MemberRepository(AppDbContext context) : base(context)
         {
-            _dbContext = dbContext;
         }
 
+        public async Task<bool> IsEmailUniqueAsync(string email)
+        {
+            return !await _context.Members.AnyAsync(m => m.Email == email);
+        }
         public async Task<Member> GetByIdAsync(int id)
         {
             // Use EF Core to find the member by their primary key (Id)
@@ -64,10 +67,6 @@ namespace ApexGym.Infrastructure.Data.Repositories
             await _dbContext.SaveChangesAsync();
         }
 
-        public async Task<bool> IsEmailUniqueAsync(string email)
-        {
-            // Use EF Core to check if any member already has this email
-            return !await _dbContext.Members.AnyAsync(m => m.Email == email);
-        }
+       
     }
 }

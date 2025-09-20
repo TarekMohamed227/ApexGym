@@ -5,13 +5,17 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ApexGym.Infrastructure.Data.Repositories
 {
-    public class TrainerRepository : ITrainerRepository
+    public class TrainerRepository : GenericRepository<Trainer>, ITrainerRepository
     {
-        private readonly AppDbContext _context;
-
-        public TrainerRepository(AppDbContext context)
+        public TrainerRepository(AppDbContext context) : base(context)
         {
-            _context = context;
+        }
+
+        public async Task<Trainer> GetTrainerWithDetailsAsync(int id)
+        {
+            return await _context.Trainers
+                .Include(t => t.WorkoutClasses)
+                .FirstOrDefaultAsync(t => t.Id == id);
         }
 
         public async Task<Trainer> AddAsync(Trainer trainer)
@@ -38,12 +42,7 @@ namespace ApexGym.Infrastructure.Data.Repositories
             return await _context.Trainers.FindAsync(id);
         }
 
-        public async Task<Trainer> GetTrainerWithDetailsAsync(int id) // Fixed method name to match interface
-        {
-            return await _context.Trainers
-                .Include(t => t.WorkoutClasses) // EF Core Include
-                .FirstOrDefaultAsync(t => t.Id == id); // lowercase 'f' in FirstOrDefaultAsync
-        }
+       
 
         public async Task UpdateAsync(Trainer trainer) // Fixed typo in method name (UpdateAsyc -> UpdateAsync)
         {

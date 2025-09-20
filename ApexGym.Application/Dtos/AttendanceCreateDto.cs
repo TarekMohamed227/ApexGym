@@ -6,7 +6,11 @@ using System.Threading.Tasks;
 
 namespace ApexGym.Application.Dtos
 {
-    internal class AttendanceCreateDto
+    public class AttendanceCreateDto
     {
+        public int MemberId { get; set; }
+        public int WorkoutClassId { get; set; }
+        // RegistrationDate is set automatically
+        // Attended is false by default
     }
 }
