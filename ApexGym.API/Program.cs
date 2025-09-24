@@ -18,7 +18,9 @@ using Microsoft.OpenApi.Models;
 using Serilog;
 using Serilog.Events;
 
-// Create and configure the Serilog logger
+// --------------------
+// Setup Serilog Logger
+// --------------------
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Debug()
     .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
@@ -41,11 +43,13 @@ try
 
     var builder = WebApplication.CreateBuilder(args);
 
-    // Clear all existing logging providers and add Serilog
+    // Clear default logging providers and add Serilog
     builder.Logging.ClearProviders();
     builder.Host.UseSerilog();
 
-    // ===== SERVICE REGISTRATION =====
+    // ----------------------
+    // Add Services to DI
+    // ----------------------
     builder.Services.AddControllers(options =>
     {
         options.Filters.Add<ValidationFilter>();
@@ -79,23 +83,41 @@ try
         });
     });
 
+    // ----------------------
+    // Configure CORS
+    // ----------------------
+    builder.Services.AddCors(options =>
+    {
+        options.AddPolicy("AllowAngularDev", policy =>
+        {
+            policy.WithOrigins("http://localhost:4200") // Angular dev URL
+                  .AllowAnyHeader()
+                  .AllowAnyMethod()
+                  .AllowCredentials(); // Optional if sending cookies
+        });
+    });
+
+    // ----------------------
     // Database Context
+    // ----------------------
     builder.Services.AddDbContext<AppDbContext>(options =>
         options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+    // ----------------------
     // Application Services
-    // Add UnitOfWork (ONE line instead of multiple repository registrations)
+    // ----------------------
     builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
     builder.Services.AddScoped<IMemberRepository, MemberRepository>();
-    // Add repositories to the container
     builder.Services.AddScoped<ITrainerRepository, TrainerRepository>();
     builder.Services.AddScoped<IWorkoutClassRepository, WorkoutClassRepository>();
     builder.Services.AddScoped<IAttendanceRepository, AttendanceRepository>();
     builder.Services.AddAutoMapper(typeof(MemberProfile));
     builder.Services.AddValidatorsFromAssemblyContaining<MemberUpdateDtoValidator>();
-    // Add this after your specific repository registrations
     builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
+
+    // ----------------------
     // Identity Configuration
+    // ----------------------
     builder.Services.AddIdentity<User, IdentityRole<int>>(options =>
     {
         options.Password.RequireDigit = true;
@@ -107,7 +129,9 @@ try
     .AddEntityFrameworkStores<AppDbContext>()
     .AddDefaultTokenProviders();
 
+    // ----------------------
     // JWT Authentication
+    // ----------------------
     builder.Services.AddAuthentication(options =>
     {
         options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -130,30 +154,18 @@ try
         };
     });
 
-    // Token Service
     builder.Services.AddScoped<ITokenService, TokenService>();
-
-    // ===== END OF SERVICE REGISTRATION =====
 
     var app = builder.Build();
 
-    // ===== INITIALIZE ROLES =====
-    using (var scope = app.Services.CreateScope())
-    {
-        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<int>>>();
+    // ----------------------
+    // Use CORS before routing
+    // ----------------------
+    app.UseCors("AllowAngularDev");
 
-        // Create roles if they don't exist
-        var roles = new[] { "Admin", "Member" };
-
-        foreach (var role in roles)
-        {
-            if (!await roleManager.RoleExistsAsync(role))
-            {
-                await roleManager.CreateAsync(new IdentityRole<int>(role));
-            }
-        }
-    }
-    // ===== MIDDLEWARE PIPELINE =====
+    // ----------------------
+    // Middleware pipeline
+    // ----------------------
     app.UseMiddleware<ExceptionMiddleware>();
 
     if (app.Environment.IsDevelopment())
@@ -164,11 +176,26 @@ try
 
     app.UseHttpsRedirection();
 
-    // Authentication & Authorization MUST be in this order
     app.UseAuthentication();
     app.UseAuthorization();
 
     app.MapControllers();
+
+    // ----------------------
+    // Initialize Roles
+    // ----------------------
+    using (var scope = app.Services.CreateScope())
+    {
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<int>>>();
+        var roles = new[] { "Admin", "Member" };
+        foreach (var role in roles)
+        {
+            if (!await roleManager.RoleExistsAsync(role))
+            {
+                await roleManager.CreateAsync(new IdentityRole<int>(role));
+            }
+        }
+    }
 
     Log.Information("Application configured successfully. Starting now...");
     app.Run();

@@ -38,20 +38,20 @@ namespace ApexGym.Infrastructure.Data.Repositories
         public async Task<WorkoutClass> AddAsync(WorkoutClass workoutClass)
         {
             _context.WorkoutClasses.Add(workoutClass);
-            await _context.SaveChangesAsync();
+    
             return workoutClass;
         }
         
         public async Task UpdateAsync(WorkoutClass workoutClass)
         {
             _context.Entry(workoutClass).State = EntityState.Modified;
-            await _context.SaveChangesAsync();
+          
         }
 
         public async Task DeleteAsync(WorkoutClass workoutClass)
         {
             _context.WorkoutClasses.Remove(workoutClass);
-            await _context.SaveChangesAsync();
+           
         }
     }
 }

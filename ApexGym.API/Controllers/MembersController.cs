@@ -133,5 +133,13 @@ namespace ApexGym.API.Controllers
 
             return NoContent();
         }
+
+        [HttpGet("check-email")]
+        [AllowAnonymous] // or [Authorize], depending on your business rules
+        public async Task<ActionResult<bool>> CheckEmail(string email)
+        {
+            var isUnique = await _unitOfWork.MemberRepository.IsEmailUniqueAsync(email);
+            return Ok(isUnique);
+        }
     }
 }

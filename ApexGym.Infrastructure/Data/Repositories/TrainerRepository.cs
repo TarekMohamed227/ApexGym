@@ -22,14 +22,14 @@ namespace ApexGym.Infrastructure.Data.Repositories
         {
             // Use Add instead of AddAsync for better performance in most cases
             _context.Trainers.Add(trainer);
-            await _context.SaveChangesAsync();
+            
             return trainer;
         }
 
         public async Task DeleteAsync(Trainer trainer)
         {
             _context.Trainers.Remove(trainer);
-            await _context.SaveChangesAsync();
+           
         }
 
         public async Task<List<Trainer>> GetAllAsync()
@@ -47,7 +47,7 @@ namespace ApexGym.Infrastructure.Data.Repositories
         public async Task UpdateAsync(Trainer trainer) // Fixed typo in method name (UpdateAsyc -> UpdateAsync)
         {
             _context.Entry(trainer).State = EntityState.Modified;
-            await _context.SaveChangesAsync();
+           
         }
     }
 }

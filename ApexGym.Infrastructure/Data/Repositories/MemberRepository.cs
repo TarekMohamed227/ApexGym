@@ -47,24 +47,24 @@ namespace ApexGym.Infrastructure.Data.Repositories
             // Add the member to the DbContext's tracker
             _dbContext.Members.Add(member);
             // Save the changes to the database
-            await _dbContext.SaveChangesAsync();
+           
             // Return the member (its Id will now be populated by the database)
             return member;
         }
 
-        public async Task UpdateAsync(Member member)
+     
+        public async Task UpdateAsync(Member member) // Fixed typo in method name (UpdateAsyc -> UpdateAsync)
         {
+            _context.Entry(member).State = EntityState.Modified;
            
-
-            await _dbContext.SaveChangesAsync();
         }
-
         public async Task DeleteAsync(Member member)
         {
             // Remove the member from the DbContext's tracker
             _dbContext.Members.Remove(member);
             // Save the changes to the database
-            await _dbContext.SaveChangesAsync();
+            
+
         }
 
        

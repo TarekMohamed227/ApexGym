@@ -33,20 +33,20 @@ namespace ApexGym.Infrastructure.Data.Repositories
         public virtual async Task<T> AddAsync(T entity)
         {
             _dbSet.Add(entity);
-            await _context.SaveChangesAsync();
+           
             return entity;
         }
 
         public virtual async Task UpdateAsync(T entity)
         {
             _context.Entry(entity).State = EntityState.Modified;
-            await _context.SaveChangesAsync();
+       
         }
 
         public virtual async Task DeleteAsync(T entity)
         {
             _dbSet.Remove(entity);
-            await _context.SaveChangesAsync();
+          
         }
 
         public virtual async Task<bool> ExistsAsync(int id)
