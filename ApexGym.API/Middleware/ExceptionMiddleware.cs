@@ -19,6 +19,7 @@ namespace ApexGym.API.Middleware
         }
 
         public async Task InvokeAsync(HttpContext context)
+        
         {
             try
             {

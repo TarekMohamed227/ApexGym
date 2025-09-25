@@ -23,7 +23,7 @@ namespace ApexGym.API.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Trainer>>> GetTrainers() // Changed to return DTO
+        public async Task<ActionResult<IEnumerable<TrainerGetDto>>> GetTrainers() // Changed to return DTO
         {
             var trainers = await _unitOfWork.Trainers.GetAllAsync();
             var trainerDtos = _mapper.Map<List<Trainer>>(trainers); // Map to DTO
