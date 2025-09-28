@@ -12,6 +12,7 @@ namespace ApexGym.Application.Dtos
         public string? LastName { get; set; }
         public string? Email { get; set; }
         public DateTime? DateOfBirth { get; set; }
+        public int MembershipPlanId { get; set; }
         // We do NOT include Id or RegistrationDate here.
         // The client should not be allowed to update these.
     }

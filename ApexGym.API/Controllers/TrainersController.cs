@@ -61,6 +61,10 @@ namespace ApexGym.API.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult<Trainer>> PostTrainer(TrainerCreateDto trainerCreateDto) // Changed to return DTO
         {
+            if(trainerCreateDto == null)
+            {
+                return BadRequest();
+            }
             var trainer = _mapper.Map<Trainer>(trainerCreateDto);
             var createdTrainer = await _unitOfWork.Trainers.AddAsync(trainer);
 
@@ -71,8 +75,8 @@ namespace ApexGym.API.Controllers
                 return BadRequest("Failed to create trainer.");
             }
 
-            var trainerDto = _mapper.Map<Trainer>(createdTrainer); // Map to DTO
-            return CreatedAtAction(nameof(GetTrainer), new { id = trainerDto.Id }, trainerDto);
+            ; // Map to DTO
+            return CreatedAtAction(nameof(GetTrainer), new { id = createdTrainer.Id }, createdTrainer);
         }
 
         [HttpPut("{id}")]
