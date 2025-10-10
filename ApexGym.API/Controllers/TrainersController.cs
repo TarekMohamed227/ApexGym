@@ -26,12 +26,12 @@ namespace ApexGym.API.Controllers
         public async Task<ActionResult<IEnumerable<TrainerGetDto>>> GetTrainers() // Changed to return DTO
         {
             var trainers = await _unitOfWork.Trainers.GetAllAsync();
-            var trainerDtos = _mapper.Map<List<Trainer>>(trainers); // Map to DTO
+            var trainerDtos = _mapper.Map<List<TrainerGetDto>>(trainers); // Map to DTO
             return Ok(trainerDtos);
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<Trainer>> GetTrainer(int id) // Changed to return DTO
+        public async Task<ActionResult<TrainerGetDto>> GetTrainer(int id) // Changed to return DTO
         {
             var trainer = await _unitOfWork.Trainers.GetByIdAsync(id);
             if (trainer == null)
@@ -39,7 +39,7 @@ namespace ApexGym.API.Controllers
                 return NotFound();
             }
 
-            var trainerDto = _mapper.Map<Trainer>(trainer); // Map to DTO
+            var trainerDto = _mapper.Map<TrainerGetDto>(trainer); // Map to DTO
             return Ok(trainerDto);
         }
 
@@ -59,14 +59,14 @@ namespace ApexGym.API.Controllers
 
         [HttpPost]
         [Authorize(Roles = "Admin")]
-        public async Task<ActionResult<Trainer>> PostTrainer(TrainerCreateDto trainerCreateDto) // Changed to return DTO
+        public async Task<ActionResult<Trainer>> PostTrainer(TrainerCreateDto trainerCreateDto, CancellationToken cancellationToken) // Changed to return DTO
         {
             if(trainerCreateDto == null)
             {
                 return BadRequest();
             }
             var trainer = _mapper.Map<Trainer>(trainerCreateDto);
-            var createdTrainer = await _unitOfWork.Trainers.AddAsync(trainer);
+            var createdTrainer = await _unitOfWork.Trainers.AddAsync(trainer, cancellationToken);
 
             // SAVE THE CHANGES
             var result = await _unitOfWork.CompleteAsync();

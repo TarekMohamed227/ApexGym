@@ -4,6 +4,7 @@ using ApexGym.Domain.Entities;
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Threading;
 
 namespace ApexGym.API.Controllers
 {
@@ -59,7 +60,7 @@ namespace ApexGym.API.Controllers
 
         [HttpPost]
         [Authorize(Roles = "Admin")]
-        public async Task<ActionResult<WorkoutClassDto>> PostWorkoutClass(WorkoutClassCreateDto workoutClassCreateDto)
+        public async Task<ActionResult<WorkoutClassDto>> PostWorkoutClass(WorkoutClassCreateDto workoutClassCreateDto, CancellationToken cancellationToken)
         {
             if (workoutClassCreateDto.EndTime <= workoutClassCreateDto.StartTime)
             {
@@ -67,7 +68,7 @@ namespace ApexGym.API.Controllers
             }
 
             var workoutClass = _mapper.Map<WorkoutClass>(workoutClassCreateDto);
-            var createdClass = await _unitOfWork.WorkoutClasses.AddAsync(workoutClass);
+            var createdClass = await _unitOfWork.WorkoutClasses.AddAsync(workoutClass, cancellationToken);
 
             // SAVE THE CHANGES
             var result = await _unitOfWork.CompleteAsync();

@@ -10,9 +10,11 @@ using ApexGym.Infrastructure.Data;
 using ApexGym.Infrastructure.Data.Repositories;
 
 using FluentValidation;
+using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
@@ -114,6 +116,8 @@ try
     builder.Services.AddAutoMapper(typeof(MemberProfile));
     builder.Services.AddValidatorsFromAssemblyContaining<MemberUpdateDtoValidator>();
     builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
+    builder.Services.AddMediatR(typeof(Program));
+
 
     // ----------------------
     // Identity Configuration

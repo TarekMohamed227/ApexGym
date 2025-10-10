@@ -51,7 +51,7 @@ namespace ApexGym.API.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<MemberDto>> PostMember(MemberCreateDto memberCreateDto)
+        public async Task<ActionResult<MemberDto>> PostMember(MemberCreateDto memberCreateDto , CancellationToken cancellationToken)
         {
             // Use the specific repository for custom methods - NO CASTING NEEDED!
             if (!await _unitOfWork.MemberRepository.IsEmailUniqueAsync(memberCreateDto.Email))
@@ -60,7 +60,7 @@ namespace ApexGym.API.Controllers
             }
 
             var member = _mapper.Map<Member>(memberCreateDto);
-            var createdMember = await _unitOfWork.Members.AddAsync(member);
+            var createdMember = await _unitOfWork.Members.AddAsync(member , cancellationToken);
 
             // SAVE THE CHANGES
             var result = await _unitOfWork.CompleteAsync();

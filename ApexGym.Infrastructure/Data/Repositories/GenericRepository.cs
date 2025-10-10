@@ -30,7 +30,7 @@ namespace ApexGym.Infrastructure.Data.Repositories
             return await _dbSet.ToListAsync();
         }
 
-        public virtual async Task<T> AddAsync(T entity)
+        public virtual async Task<T> AddAsync(T entity,CancellationToken cancellationToken)
         {
             _dbSet.Add(entity);
            
